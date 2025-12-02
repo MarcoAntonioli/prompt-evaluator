@@ -5,8 +5,10 @@ Usage: uv run python tmp_test.py
 """
 
 import os
+import httpx
 from dotenv import load_dotenv
-from langchain_oci import ChatOCIGenAI
+from langchain_openai import ChatOpenAI
+from oci_openai import OciUserPrincipalAuth
 
 # Load environment variables
 load_dotenv()
@@ -31,11 +33,15 @@ def test_model(model_name: str, model_id: str):
     try:
         # Initialize the model
         print(f"Initializing {model_name} model...")
-        llm = ChatOCIGenAI(
-            model_id=model_id,
-            # service_endpoint=service_endpoint,
-            compartment_id=compartment_id,
-            # model_kwargs={"temperature": 0.7, "max_tokens": 200},
+        llm = ChatOpenAI(
+            model=model_id,
+            api_key="OCI",
+            base_url="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1",
+            http_client=httpx.Client(
+                auth=OciUserPrincipalAuth(profile_name="DEFAULT"),
+                headers={"CompartmentId": compartment_id},
+            ),
+            model_kwargs={"temperature": 0.7, "max_tokens": 200},
         )
         print(f"✓ Model initialized successfully\n")
 

@@ -1,7 +1,10 @@
 import os
 import time
-from typing import Dict, Optional, Callable
+import httpx
+from typing import Dict, Optional, Callable, Union
 from langchain_oci import ChatOCIGenAI
+from langchain_openai import ChatOpenAI
+from oci_openai import OciUserPrincipalAuth
 
 
 class LLMService:
@@ -28,7 +31,7 @@ class LLMService:
 
     def _init_model(
         self, model_name: str, model_id: Optional[str]
-    ) -> Optional[ChatOCIGenAI]:
+    ) -> Optional[Union[ChatOCIGenAI, ChatOpenAI]]:
         """Initialize a single OCI model"""
         if not model_id:
             print(
@@ -37,13 +40,28 @@ class LLMService:
             return None
 
         try:
-            return ChatOCIGenAI(
-                model_id=model_id,
-                # service_endpoint=self.service_endpoint,
-                compartment_id=self.compartment_id,
-                is_stream=True,
-                # model_kwargs={"temperature": 0.7, "max_tokens": 1000},
-            )
+            # Use ChatOpenAI with OciUserPrincipalAuth for Grok model
+            if model_name == "grok":
+                return ChatOpenAI(
+                    model=model_id,
+                    api_key="OCI",
+                    base_url="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1",
+                    http_client=httpx.Client(
+                        auth=OciUserPrincipalAuth(profile_name="DEFAULT"),
+                        headers={"CompartmentId": self.compartment_id},
+                    ),
+                    model_kwargs={"temperature": 0.7, "max_tokens": 200},
+                    streaming=True,
+                )
+            else:
+                # Use ChatOCIGenAI for other models
+                return ChatOCIGenAI(
+                    model_id=model_id,
+                    # service_endpoint=self.service_endpoint,
+                    compartment_id=self.compartment_id,
+                    is_stream=True,
+                    # model_kwargs={"temperature": 0.7, "max_tokens": 1000},
+                )
         except Exception as e:
             print(f"Error initializing {model_name} model: {e}")
             return None
