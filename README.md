@@ -44,19 +44,34 @@ cd backend
 uv sync
 ```
 
-4. Create a `.env` file in the `backend` directory (copy from `.env.example`):
+4. Create a `.env` file in the `backend` directory:
 ```bash
-cp .env.example .env
+cp .env.example .env  # if .env.example is present
+# or create it manually:
+touch .env
 ```
 
 5. Edit `.env` with your OCI credentials. Open the `.env` file and replace the placeholder values:
    - `COMPARTMENT_OCID`: Your OCI compartment OCID (required)
-   - `OCI_COHERE_MODEL_ID`: Cohere model ID (optional, comment out if not using)
-   - `OCI_GEMINI_MODEL_ID`: Gemini model ID (optional, comment out if not using)
-   - `OCI_GROK_MODEL_ID`: Grok model ID (optional, comment out if not using)
-   - `OCI_LLAMA_MODEL_ID`: Llama model ID (optional, comment out if not using)
-   - `OCI_SERVICE_ENDPOINT`: OCI service endpoint (optional, has default)
    - `DATABASE_URL`: Database URL (optional, defaults to SQLite)
+   - `OCI_SERVICE_ENDPOINT`: OCI service endpoint (optional, has default)
+
+   For models, configure at least one of the following environment variables (uncomment and set in `.env`):
+   - `OCI_XAI_GROK_4_MODEL_ID`
+   - `OCI_XAI_GROK_4_FAST_REASONING_MODEL_ID`
+   - `OCI_XAI_GROK_4_FAST_NON_REASONING_MODEL_ID`
+   - `OCI_XAI_GROK_3_MODEL_ID`
+   - `OCI_XAI_GROK_3_FAST_MODEL_ID`
+   - `OCI_XAI_GROK_3_MINI_MODEL_ID`
+   - `OCI_XAI_GROK_3_MINI_FAST_MODEL_ID`
+   - `OCI_XAI_GROK_CODE_FAST_1_MODEL_ID`
+   - `OCI_META_LLAMA_4_MAVERICK_17B_128E_INSTRUCT_FP8_MODEL_ID`
+   - `OCI_META_LLAMA_4_SCOUT_17B_16E_INSTRUCT_MODEL_ID`
+   - `OCI_META_LLAMA_3_3_70B_INSTRUCT_MODEL_ID`
+   - `OCI_META_LLAMA_3_1_405B_INSTRUCT_MODEL_ID`
+   - `OCI_COHERE_COMMAND_LATEST_MODEL_ID`
+   - `OCI_COHERE_COMMAND_A_03_2025_MODEL_ID`
+   - `OCI_COHERE_COMMAND_PLUS_LATEST_MODEL_ID`
 
    **Note**: You need at least one model configured. Comment out models you don't want to use by adding `#` at the start of the line.
 
