@@ -24,7 +24,34 @@ A web application that compares multiple Large Language Models (LLMs) hosted on 
 - OCI account with access to Generative AI models
 - Compartment OCID and model IDs for the models you want to use
 
+## Quick Start
+
+1. Install all dependencies (backend, frontend, and root-level):
+   ```bash
+   npm run setup
+   ```
+   
+   This single command will install:
+   - Backend Python dependencies (via `uv sync`)
+   - Frontend Node.js dependencies (via `npm install`)
+   - Root-level dev dependencies (`concurrently`)
+
+2. Configure your `.env` file in the `backend` directory (see Backend Setup section below for details)
+
+3. Start both backend and frontend with a single command:
+   ```bash
+   npm run dev
+   ```
+
+   This will start:
+   - Backend API at `http://localhost:8000`
+   - Frontend application at `http://localhost:5173`
+
+   Both services will run in the same terminal with color-coded output. Press `Ctrl+C` to stop both.
+
 ## Setup
+
+> **Note**: For a unified development experience, see the [Quick Start](#quick-start) section above. The individual setup instructions below are provided for reference or if you prefer to run services separately.
 
 ### Backend Setup
 
