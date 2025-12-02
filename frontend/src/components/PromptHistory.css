@@ -1,8 +1,15 @@
 .history-container {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+
+.history-container:hover {
+  box-shadow: var(--shadow-xl), var(--shadow-colored);
 }
 
 .history-header {
@@ -13,68 +20,104 @@
 }
 
 .history-header h1 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 2rem;
+  font-weight: 800;
   margin: 0;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .refresh-button {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-gradient);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.refresh-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.refresh-button:hover::before {
+  left: 100%;
 }
 
 .refresh-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--shadow-lg), var(--shadow-colored);
+  background: var(--primary-gradient-hover);
 }
 
 .empty-state {
   text-align: center;
-  padding: 3rem;
-  color: #666;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
 }
 
 .prompts-table-container {
   overflow-x: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  background: white;
 }
 
 .prompts-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
 .prompts-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-gradient);
   color: white;
 }
 
 .prompts-table th {
-  padding: 1rem;
+  padding: 1rem 0.875rem;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.875rem;
-  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
 }
 
 .prompts-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  color: #333;
+  padding: 1rem 0.875rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.prompts-table tbody tr {
+  transition: var(--transition);
 }
 
 .prompts-table tbody tr:hover {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  transform: scale(1.01);
 }
 
 .prompts-table tbody tr:last-child td {
@@ -84,34 +127,39 @@
 .prompt-text {
   max-width: 400px;
   word-wrap: break-word;
+  line-height: 1.6;
 }
 
 .view-button {
   padding: 0.5rem 1rem;
-  background: #667eea;
+  background: var(--accent-color);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
 }
 
 .view-button:hover {
-  background: #5568d3;
-  transform: translateY(-1px);
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .loading,
 .error-message {
   text-align: center;
-  padding: 3rem;
-  font-size: 1.125rem;
+  padding: 3rem 2rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
 }
 
 .error-message {
-  color: #f44336;
+  color: #ef4444;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
@@ -121,17 +169,21 @@
   
   .history-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
     align-items: flex-start;
+  }
+
+  .history-header h1 {
+    font-size: 1.75rem;
   }
   
   .prompts-table {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
   
   .prompts-table th,
   .prompts-table td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.875rem 0.625rem;
   }
 }
 

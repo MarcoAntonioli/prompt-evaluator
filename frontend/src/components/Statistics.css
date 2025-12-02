@@ -1,27 +1,49 @@
 .statistics-container {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+
+.statistics-container:hover {
+  box-shadow: var(--shadow-xl), var(--shadow-colored);
 }
 
 .statistics-container h2 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .chart-card {
-  background: #fafafa;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  border-radius: var(--radius-md);
   padding: 1.5rem;
+  border: 2px solid var(--border-color);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .chart-card.full-width {
@@ -29,9 +51,11 @@
 }
 
 .chart-card h3 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .statistics-table {
@@ -39,18 +63,41 @@
 }
 
 .statistics-table h3 {
-  color: #333;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .table-wrapper {
   max-width: 100%;
   max-height: 600px;
   overflow: auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
   background: white;
+  border: 2px solid var(--border-color);
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-color) transparent;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
 }
 
 .statistics-table table {
@@ -58,33 +105,43 @@
   border-collapse: collapse;
   background: white;
   font-size: 0.9rem;
-  min-width: 1000px; /* Ensure table maintains minimum width */
+  min-width: 1000px;
 }
 
 .statistics-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-gradient);
   color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .statistics-table th {
-  padding: 0.75rem;
+  padding: 0.875rem 0.625rem;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
   white-space: nowrap;
 }
 
 .statistics-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f0f0f0;
-  color: #333;
+  padding: 0.875rem 0.625rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
   white-space: nowrap;
+  transition: var(--transition);
+  font-size: 0.85rem;
+}
+
+.statistics-table tbody tr {
+  transition: var(--transition);
 }
 
 .statistics-table tbody tr:hover {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  transform: scale(1.01);
 }
 
 .statistics-table tbody tr:last-child td {
@@ -94,10 +151,15 @@
 @media (max-width: 768px) {
   .charts-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
   
   .statistics-container {
     padding: 1.5rem;
+  }
+
+  .statistics-container h2 {
+    font-size: 1.5rem;
   }
   
   .table-wrapper {
