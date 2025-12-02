@@ -24,22 +24,22 @@ function Statistics({ modelStates }) {
     .filter(([_, state]) => state.timeToFirstToken !== null && !state.error)
     .map(([modelKey, state]) => ({
       model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
-      time: (state.timeToFirstToken * 1000).toFixed(0), // Convert to ms
+      time: state.timeToFirstToken * 1000, // Convert to ms, keep as number
     }));
 
   const totalTimeData = Object.entries(modelStates)
     .filter(([_, state]) => state.totalTime !== null && !state.error)
     .map(([modelKey, state]) => ({
       model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
-      time: (state.totalTime * 1000).toFixed(0), // Convert to ms
+      time: state.totalTime * 1000, // Convert to ms, keep as number
     }));
 
   const comparisonData = Object.entries(modelStates)
     .filter(([_, state]) => state.timeToFirstToken !== null && state.totalTime !== null && !state.error)
     .map(([modelKey, state]) => ({
       model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
-      'Time to First Token': (state.timeToFirstToken * 1000).toFixed(0),
-      'Total Time': (state.totalTime * 1000).toFixed(0),
+      'Time to First Token': state.timeToFirstToken * 1000, // Convert to ms, keep as number
+      'Total Time': state.totalTime * 1000, // Convert to ms, keep as number
     }));
 
   const tokenCountData = Object.entries(modelStats)
@@ -84,7 +84,7 @@ function Statistics({ modelStates }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="model" />
                 <YAxis label={{ value: 'Time (ms)', angle: -90, position: 'insideLeft' }} />
-                <Tooltip />
+                <Tooltip formatter={(value) => `${Math.round(value)} ms`} />
                 <Bar dataKey="time" fill="#667eea" />
               </BarChart>
             </ResponsiveContainer>
@@ -99,7 +99,7 @@ function Statistics({ modelStates }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="model" />
                 <YAxis label={{ value: 'Time (ms)', angle: -90, position: 'insideLeft' }} />
-                <Tooltip />
+                <Tooltip formatter={(value) => `${Math.round(value)} ms`} />
                 <Bar dataKey="time" fill="#764ba2" />
               </BarChart>
             </ResponsiveContainer>
@@ -176,7 +176,7 @@ function Statistics({ modelStates }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="model" />
                 <YAxis label={{ value: 'Time (ms)', angle: -90, position: 'insideLeft' }} />
-                <Tooltip />
+                <Tooltip formatter={(value) => `${Math.round(value)} ms`} />
                 <Legend />
                 <Bar dataKey="Time to First Token" fill="#667eea" />
                 <Bar dataKey="Total Time" fill="#764ba2" />
