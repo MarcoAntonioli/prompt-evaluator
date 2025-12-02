@@ -3,6 +3,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { calculateAllStatistics } from '../utils/statistics';
 import './Statistics.css';
 
+// Helper function to format model display names
+const formatModelName = (modelKey) => {
+  if (modelKey.startsWith('xai.')) {
+    return modelKey.replace('xai.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  } else if (modelKey.startsWith('meta.')) {
+    return modelKey.replace('meta.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  } else if (modelKey.startsWith('cohere.')) {
+    return modelKey.replace('cohere.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+  return modelKey;
+};
+
 function Statistics({ modelStates }) {
   // Calculate statistics for all models
   const modelStats = useMemo(() => {
@@ -23,47 +35,47 @@ function Statistics({ modelStates }) {
   const timeToFirstTokenData = Object.entries(modelStates)
     .filter(([_, state]) => state.timeToFirstToken !== null && !state.error)
     .map(([modelKey, state]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       time: state.timeToFirstToken * 1000, // Convert to ms, keep as number
     }));
 
   const totalTimeData = Object.entries(modelStates)
     .filter(([_, state]) => state.totalTime !== null && !state.error)
     .map(([modelKey, state]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       time: state.totalTime * 1000, // Convert to ms, keep as number
     }));
 
   const comparisonData = Object.entries(modelStates)
     .filter(([_, state]) => state.timeToFirstToken !== null && state.totalTime !== null && !state.error)
     .map(([modelKey, state]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       'Time to First Token': state.timeToFirstToken * 1000, // Convert to ms, keep as number
       'Total Time': state.totalTime * 1000, // Convert to ms, keep as number
     }));
 
   const tokenCountData = Object.entries(modelStats)
     .map(([modelKey, stats]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       tokens: stats.tokenCount,
     }));
 
   const emojiCountData = Object.entries(modelStats)
     .map(([modelKey, stats]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       emojis: stats.emojiCount,
     }));
 
   const throughputData = Object.entries(modelStats)
     .map(([modelKey, stats]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       'Chars/sec': stats.throughput,
       'Tokens/sec': parseFloat(stats.tokensPerSecond),
     }));
 
   const wordCountData = Object.entries(modelStats)
     .map(([modelKey, stats]) => ({
-      model: modelKey.charAt(0).toUpperCase() + modelKey.slice(1),
+      model: formatModelName(modelKey),
       words: stats.wordCount,
     }));
 
@@ -188,53 +200,55 @@ function Statistics({ modelStates }) {
 
       <div className="statistics-table">
         <h3>Detailed Metrics</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th>Time to First Token (ms)</th>
-              <th>Total Time (ms)</th>
-              <th>Tokens</th>
-              <th>Words</th>
-              <th>Emojis</th>
-              <th>Sentences</th>
-              <th>Avg Word Length</th>
-              <th>Reading Time (min)</th>
-              <th>Chars/sec</th>
-              <th>Tokens/sec</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(modelStates)
-              .filter(([_, state]) => !state.error)
-              .map(([modelKey, state]) => {
-                const stats = modelStats[modelKey] || {};
-                return (
-                  <tr key={modelKey}>
-                    <td>{modelKey.charAt(0).toUpperCase() + modelKey.slice(1)}</td>
-                    <td>
-                      {state.timeToFirstToken !== null
-                        ? (state.timeToFirstToken * 1000).toFixed(0)
-                        : '-'}
-                    </td>
-                    <td>
-                      {state.totalTime !== null
-                        ? (state.totalTime * 1000).toFixed(0)
-                        : '-'}
-                    </td>
-                    <td>{stats.tokenCount || '-'}</td>
-                    <td>{stats.wordCount || '-'}</td>
-                    <td>{stats.emojiCount || '-'}</td>
-                    <td>{stats.sentenceCount || '-'}</td>
-                    <td>{stats.averageWordLength || '-'}</td>
-                    <td>{stats.readingTime || '-'}</td>
-                    <td>{stats.throughput || '-'}</td>
-                    <td>{stats.tokensPerSecond || '-'}</td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Time to First Token (ms)</th>
+                <th>Total Time (ms)</th>
+                <th>Tokens</th>
+                <th>Words</th>
+                <th>Emojis</th>
+                <th>Sentences</th>
+                <th>Avg Word Length</th>
+                <th>Reading Time (min)</th>
+                <th>Chars/sec</th>
+                <th>Tokens/sec</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(modelStates)
+                .filter(([_, state]) => !state.error)
+                .map(([modelKey, state]) => {
+                  const stats = modelStats[modelKey] || {};
+                  return (
+                    <tr key={modelKey}>
+                      <td>{formatModelName(modelKey)}</td>
+                      <td>
+                        {state.timeToFirstToken !== null
+                          ? (state.timeToFirstToken * 1000).toFixed(0)
+                          : '-'}
+                      </td>
+                      <td>
+                        {state.totalTime !== null
+                          ? (state.totalTime * 1000).toFixed(0)
+                          : '-'}
+                      </td>
+                      <td>{stats.tokenCount || '-'}</td>
+                      <td>{stats.wordCount || '-'}</td>
+                      <td>{stats.emojiCount || '-'}</td>
+                      <td>{stats.sentenceCount || '-'}</td>
+                      <td>{stats.averageWordLength || '-'}</td>
+                      <td>{stats.readingTime || '-'}</td>
+                      <td>{stats.throughput || '-'}</td>
+                      <td>{stats.tokensPerSecond || '-'}</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

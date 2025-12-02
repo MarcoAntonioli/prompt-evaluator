@@ -36,6 +36,16 @@ export const getPromptDetail = async (promptId) => {
   return response.json();
 };
 
+export const getModelRegistry = async () => {
+  const response = await fetch(`${API_BASE_URL}/prompts/models/registry`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch model registry');
+  }
+  
+  return response.json();
+};
+
 export const streamPrompt = (promptId, onUpdate, selectedModels = null) => {
   // Build URL with model query parameters if models are selected
   let url = `${API_BASE_URL}/prompts/${promptId}/stream`;

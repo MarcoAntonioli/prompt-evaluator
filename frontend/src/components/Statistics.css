@@ -44,14 +44,21 @@
   font-size: 1.25rem;
 }
 
+.table-wrapper {
+  max-width: 100%;
+  max-height: 600px;
+  overflow: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
 .statistics-table table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-size: 0.9rem;
+  min-width: 1000px; /* Ensure table maintains minimum width */
 }
 
 .statistics-table thead {
@@ -93,8 +100,8 @@
     padding: 1.5rem;
   }
   
-  .statistics-table {
-    overflow-x: auto;
+  .table-wrapper {
+    max-height: 500px;
   }
 }
 

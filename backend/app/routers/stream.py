@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from typing import List, Optional
 from ..database import get_db, SessionLocal
 from ..models import Prompt, ModelResponse
 from ..schemas import StreamUpdate
@@ -72,14 +73,23 @@ def generate_with_streaming(
         db_session.close()
 
 
-async def stream_generator(prompt_id: int, prompt_text: str, db: Session):
+async def stream_generator(prompt_id: int, prompt_text: str, db: Session, selected_models: Optional[List[str]] = None):
     """Generator function for SSE streaming"""
     # Get available models
-    available_models = llm_service.get_available_models()
+    all_available_models = llm_service.get_available_models()
     
-    if not available_models:
+    if not all_available_models:
         yield f"data: {json.dumps({'error': 'No models available'})}\n\n"
         return
+    
+    # Filter to selected models if provided, otherwise use all available
+    if selected_models:
+        available_models = [m for m in selected_models if m in all_available_models]
+        if not available_models:
+            yield f"data: {json.dumps({'error': 'No valid models selected'})}\n\n"
+            return
+    else:
+        available_models = all_available_models
     
     # Create a shared queue for all model updates
     update_queue = Queue()
@@ -123,14 +133,18 @@ async def stream_generator(prompt_id: int, prompt_text: str, db: Session):
 
 
 @router.get("/{prompt_id}/stream")
-async def stream_prompt(prompt_id: int, db: Session = Depends(get_db)):
+async def stream_prompt(
+    prompt_id: int, 
+    db: Session = Depends(get_db),
+    models: Optional[List[str]] = Query(None, description="List of model names to run")
+):
     """Stream real-time updates as models generate responses"""
     prompt = db.query(Prompt).filter(Prompt.id == prompt_id).first()
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
     
     return StreamingResponse(
-        stream_generator(prompt_id, prompt.text, db),
+        stream_generator(prompt_id, prompt.text, db, selected_models=models),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -138,4 +152,5 @@ async def stream_prompt(prompt_id: int, db: Session = Depends(get_db)):
             "X-Accel-Buffering": "no",
         }
     )
+
 

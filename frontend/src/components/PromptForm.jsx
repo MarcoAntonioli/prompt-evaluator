@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { submitPrompt, streamPrompt } from '../services/api';
+import { submitPrompt, streamPrompt, getModelRegistry } from '../services/api';
 import ModelResponse from './ModelResponse';
 import Statistics from './Statistics';
 import './PromptForm.css';
 
-const MODEL_NAMES = ['cohere', 'gemini', 'grok', 'llama'];
-const MODEL_DISPLAY_NAMES = {
-  cohere: 'Cohere',
-  gemini: 'Gemini',
-  grok: 'Grok',
-  llama: 'Llama',
+// Helper function to format model display names
+const formatModelName = (modelKey) => {
+  // Remove provider prefix and format nicely
+  if (modelKey.startsWith('xai.')) {
+    return modelKey.replace('xai.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  } else if (modelKey.startsWith('meta.')) {
+    return modelKey.replace('meta.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  } else if (modelKey.startsWith('cohere.')) {
+    return modelKey.replace('cohere.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+  return modelKey;
 };
 
 function PromptForm() {
@@ -18,17 +23,75 @@ function PromptForm() {
   const [promptId, setPromptId] = useState(null);
   const [modelStates, setModelStates] = useState({});
   const [allComplete, setAllComplete] = useState(false);
-  const [selectedModels, setSelectedModels] = useState(
-    MODEL_NAMES.reduce((acc, model) => {
-      acc[model] = true;
-      return acc;
-    }, {})
-  );
+  const [modelRegistry, setModelRegistry] = useState(null);
+  const [expandedProviders, setExpandedProviders] = useState({});
+  const [selectedModels, setSelectedModels] = useState({});
   const cleanupRef = useRef(null);
+
+  // Fetch model registry on mount
+  useEffect(() => {
+    const fetchRegistry = async () => {
+      try {
+        const registry = await getModelRegistry();
+        setModelRegistry(registry);
+        // Initialize expanded state - all collapsed by default
+        const expanded = {};
+        Object.keys(registry).forEach(provider => {
+          expanded[provider] = false;
+        });
+        setExpandedProviders(expanded);
+        // Initialize selected models - none selected by default
+        const selected = {};
+        Object.values(registry).flat().forEach(modelKey => {
+          selected[modelKey] = false;
+        });
+        setSelectedModels(selected);
+      } catch (error) {
+        console.error('Error fetching model registry:', error);
+        // Set a fallback registry so UI can still render
+        const fallbackRegistry = {
+          "xAI Grok": [
+            "xai.grok-4",
+            "xai.grok-4-fast-reasoning",
+            "xai.grok-4-fast-non-reasoning",
+            "xai.grok-3",
+            "xai.grok-3-fast",
+            "xai.grok-3-mini",
+            "xai.grok-3-mini-fast",
+            "xai.grok-code-fast-1"
+          ],
+          "Meta Llama": [
+            "meta.llama-4-maverick-17b-128e-instruct-fp8",
+            "meta.llama-4-scout-17b-16e-instruct",
+            "meta.llama-3.3-70b-instruct",
+            "meta.llama-3.2-90b-vision-instruct",
+            "meta.llama-3.1-405b-instruct"
+          ],
+          "Cohere": [
+            "cohere.command-latest",
+            "cohere.command-a-03-2025",
+            "cohere.command-plus-latest"
+          ]
+        };
+        setModelRegistry(fallbackRegistry);
+        const expanded = {};
+        Object.keys(fallbackRegistry).forEach(provider => {
+          expanded[provider] = false;
+        });
+        setExpandedProviders(expanded);
+        const selected = {};
+        Object.values(fallbackRegistry).flat().forEach(modelKey => {
+          selected[modelKey] = false;
+        });
+        setSelectedModels(selected);
+      }
+    };
+    fetchRegistry();
+  }, []);
 
   const initializeModelStates = () => {
     const states = {};
-    const modelsToInitialize = MODEL_NAMES.filter(model => selectedModels[model]);
+    const modelsToInitialize = Object.keys(selectedModels).filter(model => selectedModels[model]);
     modelsToInitialize.forEach(model => {
       states[model] = {
         response: '',
@@ -42,23 +105,45 @@ function PromptForm() {
   };
 
   const getSelectedModelList = () => {
-    return MODEL_NAMES.filter(model => selectedModels[model]);
+    return Object.keys(selectedModels).filter(model => selectedModels[model]);
   };
 
-  const handleModelToggle = (modelName) => {
+  const handleModelToggle = (modelKey) => {
     setSelectedModels(prev => ({
       ...prev,
-      [modelName]: !prev[modelName]
+      [modelKey]: !prev[modelKey]
+    }));
+  };
+
+  const handleProviderToggle = (provider) => {
+    setExpandedProviders(prev => ({
+      ...prev,
+      [provider]: !prev[provider]
     }));
   };
 
   const handleSelectAll = () => {
-    const allSelected = MODEL_NAMES.every(model => selectedModels[model]);
-    const newSelection = MODEL_NAMES.reduce((acc, model) => {
-      acc[model] = !allSelected;
-      return acc;
-    }, {});
+    if (!modelRegistry) return;
+    const allSelected = Object.keys(selectedModels).every(model => selectedModels[model]);
+    const newSelection = {};
+    Object.values(modelRegistry).flat().forEach(modelKey => {
+      newSelection[modelKey] = !allSelected;
+    });
     setSelectedModels(newSelection);
+  };
+
+  const handleSelectProvider = (provider) => {
+    if (!modelRegistry || !modelRegistry[provider]) return;
+    const providerModels = modelRegistry[provider];
+    const allProviderSelected = providerModels.every(model => selectedModels[model]);
+    
+    setSelectedModels(prev => {
+      const newSelection = { ...prev };
+      providerModels.forEach(modelKey => {
+        newSelection[modelKey] = !allProviderSelected;
+      });
+      return newSelection;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -162,14 +247,25 @@ function PromptForm() {
     setAllComplete(false);
   };
 
-  const allModelsSelected = MODEL_NAMES.every(model => selectedModels[model]);
-  const someModelsSelected = MODEL_NAMES.some(model => selectedModels[model]);
+  if (!modelRegistry) {
+    return (
+      <div className="prompt-form-container">
+        <div className="prompt-form-card">
+          <p>Loading model registry...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const allModelsSelected = Object.keys(selectedModels).length > 0 && 
+    Object.keys(selectedModels).every(model => selectedModels[model]);
+  const someModelsSelected = Object.keys(selectedModels).some(model => selectedModels[model]);
 
   return (
     <div className="prompt-form-container">
       <div className="prompt-form-card">
         <h1>Compare OCI LLM Models</h1>
-        <p className="subtitle">Enter a prompt to compare responses from Cohere, Gemini, Grok, and Llama</p>
+        <p className="subtitle">Enter a prompt to compare responses from multiple models</p>
         
         <form onSubmit={handleSubmit} className="prompt-form">
           <textarea
@@ -193,19 +289,59 @@ function PromptForm() {
                 {allModelsSelected ? 'Deselect All' : 'Select All'}
               </button>
             </div>
-            <div className="model-checkboxes">
-              {MODEL_NAMES.map((modelName) => (
-                <label key={modelName} className="model-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={selectedModels[modelName]}
-                    onChange={() => handleModelToggle(modelName)}
-                    disabled={isSubmitting}
-                    className="model-checkbox"
-                  />
-                  <span>{MODEL_DISPLAY_NAMES[modelName]}</span>
-                </label>
-              ))}
+            <div className="provider-groups">
+              {Object.entries(modelRegistry).map(([provider, models]) => {
+                const isExpanded = expandedProviders[provider];
+                const providerSelectedCount = models.filter(m => selectedModels[m]).length;
+                const allProviderSelected = models.length > 0 && providerSelectedCount === models.length;
+                const someProviderSelected = providerSelectedCount > 0;
+
+                return (
+                  <div key={provider} className="provider-group">
+                    <div 
+                      className="provider-header"
+                      onClick={() => handleProviderToggle(provider)}
+                    >
+                      <div className="provider-header-left">
+                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▶</span>
+                        <span className="provider-name">{provider}</span>
+                        {someProviderSelected && (
+                          <span className="provider-selection-count">
+                            ({providerSelectedCount}/{models.length})
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="provider-select-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectProvider(provider);
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        {allProviderSelected ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="provider-models">
+                        {models.map((modelKey) => (
+                          <label key={modelKey} className="model-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={selectedModels[modelKey] || false}
+                              onChange={() => handleModelToggle(modelKey)}
+                              disabled={isSubmitting}
+                              className="model-checkbox"
+                            />
+                            <span>{formatModelName(modelKey)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           
@@ -233,12 +369,12 @@ function PromptForm() {
       {promptId && (
         <>
           <div className="models-grid">
-            {getSelectedModelList().map((modelName) => (
+            {getSelectedModelList().map((modelKey) => (
               <ModelResponse
-                key={modelName}
-                modelName={MODEL_DISPLAY_NAMES[modelName]}
-                modelKey={modelName}
-                state={modelStates[modelName] || initializeModelStates()[modelName]}
+                key={modelKey}
+                modelName={formatModelName(modelKey)}
+                modelKey={modelKey}
+                state={modelStates[modelKey] || initializeModelStates()[modelKey]}
               />
             ))}
           </div>
@@ -253,4 +389,3 @@ function PromptForm() {
 }
 
 export default PromptForm;
-
