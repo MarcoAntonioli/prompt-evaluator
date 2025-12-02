@@ -18,11 +18,18 @@ function PromptForm() {
   const [promptId, setPromptId] = useState(null);
   const [modelStates, setModelStates] = useState({});
   const [allComplete, setAllComplete] = useState(false);
+  const [selectedModels, setSelectedModels] = useState(
+    MODEL_NAMES.reduce((acc, model) => {
+      acc[model] = true;
+      return acc;
+    }, {})
+  );
   const cleanupRef = useRef(null);
 
   const initializeModelStates = () => {
     const states = {};
-    MODEL_NAMES.forEach(model => {
+    const modelsToInitialize = MODEL_NAMES.filter(model => selectedModels[model]);
+    modelsToInitialize.forEach(model => {
       states[model] = {
         response: '',
         timeToFirstToken: null,
@@ -34,9 +41,35 @@ function PromptForm() {
     return states;
   };
 
+  const getSelectedModelList = () => {
+    return MODEL_NAMES.filter(model => selectedModels[model]);
+  };
+
+  const handleModelToggle = (modelName) => {
+    setSelectedModels(prev => ({
+      ...prev,
+      [modelName]: !prev[modelName]
+    }));
+  };
+
+  const handleSelectAll = () => {
+    const allSelected = MODEL_NAMES.every(model => selectedModels[model]);
+    const newSelection = MODEL_NAMES.reduce((acc, model) => {
+      acc[model] = !allSelected;
+      return acc;
+    }, {});
+    setSelectedModels(newSelection);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!promptText.trim() || isSubmitting) return;
+    
+    const selectedModelList = getSelectedModelList();
+    if (selectedModelList.length === 0) {
+      alert('Please select at least one model to compare.');
+      return;
+    }
 
     setIsSubmitting(true);
     setModelStates(initializeModelStates());
@@ -49,7 +82,7 @@ function PromptForm() {
       const result = await submitPrompt(promptText);
       setPromptId(result.id);
 
-      // Start streaming
+      // Start streaming with selected models
       cleanup = streamPrompt(result.id, (update) => {
         cleanupRef.current = cleanup;
         setModelStates((prev) => {
@@ -85,9 +118,9 @@ function PromptForm() {
             newState[modelName].totalTime = update.total_time;
           }
 
-          // Check if all models are complete
-          const allDone = Object.values(newState).every(
-            state => state.isComplete || state.error
+          // Check if all selected models are complete
+          const allDone = selectedModelList.every(
+            modelName => newState[modelName] && (newState[modelName].isComplete || newState[modelName].error)
           );
           if (allDone && cleanup) {
             setAllComplete(true);
@@ -97,7 +130,7 @@ function PromptForm() {
 
           return newState;
         });
-      });
+      }, selectedModelList);
     } catch (error) {
       console.error('Error submitting prompt:', error);
       alert('Failed to submit prompt. Please try again.');
@@ -129,6 +162,9 @@ function PromptForm() {
     setAllComplete(false);
   };
 
+  const allModelsSelected = MODEL_NAMES.every(model => selectedModels[model]);
+  const someModelsSelected = MODEL_NAMES.some(model => selectedModels[model]);
+
   return (
     <div className="prompt-form-container">
       <div className="prompt-form-card">
@@ -144,10 +180,39 @@ function PromptForm() {
             rows={4}
             disabled={isSubmitting}
           />
+          
+          <div className="model-selection">
+            <div className="model-selection-header">
+              <label className="model-selection-label">Select Models to Compare:</label>
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className="select-all-button"
+                disabled={isSubmitting}
+              >
+                {allModelsSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="model-checkboxes">
+              {MODEL_NAMES.map((modelName) => (
+                <label key={modelName} className="model-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedModels[modelName]}
+                    onChange={() => handleModelToggle(modelName)}
+                    disabled={isSubmitting}
+                    className="model-checkbox"
+                  />
+                  <span>{MODEL_DISPLAY_NAMES[modelName]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
           <div className="form-actions">
             <button
               type="submit"
-              disabled={!promptText.trim() || isSubmitting}
+              disabled={!promptText.trim() || isSubmitting || !someModelsSelected}
               className="submit-button"
             >
               {isSubmitting ? 'Processing...' : 'Compare Models'}
@@ -168,7 +233,7 @@ function PromptForm() {
       {promptId && (
         <>
           <div className="models-grid">
-            {MODEL_NAMES.map((modelName) => (
+            {getSelectedModelList().map((modelName) => (
               <ModelResponse
                 key={modelName}
                 modelName={MODEL_DISPLAY_NAMES[modelName]}
