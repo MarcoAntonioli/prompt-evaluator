@@ -40,9 +40,6 @@ class LLMService:
         self._add_model_if_configured(
             "xai.grok-3-mini-fast", "OCI_XAI_GROK_3_MINI_FAST_MODEL_ID"
         )
-        self._add_model_if_configured(
-            "xai.grok-code-fast-1", "OCI_XAI_GROK_CODE_FAST_1_MODEL_ID"
-        )
 
         # Meta Llama Models
         self._add_model_if_configured(

@@ -51,12 +51,12 @@ cp .env.example .env  # if .env.example is present
 touch .env
 ```
 
-5. Edit `.env` with your OCI credentials. Open the `.env` file and replace the placeholder values:
-   - `COMPARTMENT_OCID`: Your OCI compartment OCID (required)
-   - `DATABASE_URL`: Database URL (optional, defaults to SQLite)
-   - `OCI_SERVICE_ENDPOINT`: OCI service endpoint (optional, has default)
+5. Edit `.env` with your OCI credentials. The only required value is your compartment OCID; the others have safe defaults:
+   - `COMPARTMENT_OCID`: Your OCI compartment OCID (**required**)
+   - `DATABASE_URL`: Database URL (**optional**, defaults to SQLite)
+   - `OCI_SERVICE_ENDPOINT`: OCI service endpoint (**optional**, uses the standard default)
 
-   For models, configure at least one of the following environment variables (uncomment and set in `.env`):
+   The model IDs are already included in the `.env.example` file. By default, all models are available—just leave the relevant lines uncommented in your `.env` to enable a model. If you don't want to use a specific model, comment out its line by adding `#` at the start.
    - `OCI_XAI_GROK_4_MODEL_ID`
    - `OCI_XAI_GROK_4_FAST_REASONING_MODEL_ID`
    - `OCI_XAI_GROK_4_FAST_NON_REASONING_MODEL_ID`
@@ -64,7 +64,6 @@ touch .env
    - `OCI_XAI_GROK_3_FAST_MODEL_ID`
    - `OCI_XAI_GROK_3_MINI_MODEL_ID`
    - `OCI_XAI_GROK_3_MINI_FAST_MODEL_ID`
-   - `OCI_XAI_GROK_CODE_FAST_1_MODEL_ID`
    - `OCI_META_LLAMA_4_MAVERICK_17B_128E_INSTRUCT_FP8_MODEL_ID`
    - `OCI_META_LLAMA_4_SCOUT_17B_16E_INSTRUCT_MODEL_ID`
    - `OCI_META_LLAMA_3_3_70B_INSTRUCT_MODEL_ID`

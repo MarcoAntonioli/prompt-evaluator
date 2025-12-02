@@ -50,16 +50,15 @@ function PromptForm() {
         console.error('Error fetching model registry:', error);
         // Set a fallback registry so UI can still render
         const fallbackRegistry = {
-          "xAI Grok": [
+        "xAI Grok": [
             "xai.grok-4",
             "xai.grok-4-fast-reasoning",
             "xai.grok-4-fast-non-reasoning",
             "xai.grok-3",
             "xai.grok-3-fast",
             "xai.grok-3-mini",
-            "xai.grok-3-mini-fast",
-            "xai.grok-code-fast-1"
-          ],
+            "xai.grok-3-mini-fast"
+        ],
           "Meta Llama": [
             "meta.llama-4-maverick-17b-128e-instruct-fp8",
             "meta.llama-4-scout-17b-16e-instruct",

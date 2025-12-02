@@ -16,7 +16,6 @@ MODEL_ENV_MAP = {
     "xai.grok-3-fast": "OCI_XAI_GROK_3_FAST_MODEL_ID",
     "xai.grok-3-mini": "OCI_XAI_GROK_3_MINI_MODEL_ID",
     "xai.grok-3-mini-fast": "OCI_XAI_GROK_3_MINI_FAST_MODEL_ID",
-    "xai.grok-code-fast-1": "OCI_XAI_GROK_CODE_FAST_1_MODEL_ID",
     # Meta Llama Models
     "meta.llama-4-maverick-17b-128e-instruct-fp8": "OCI_META_LLAMA_4_MAVERICK_17B_128E_INSTRUCT_FP8_MODEL_ID",
     "meta.llama-4-scout-17b-16e-instruct": "OCI_META_LLAMA_4_SCOUT_17B_16E_INSTRUCT_MODEL_ID",
