@@ -2,22 +2,6 @@ import os
 import time
 from typing import Dict, Optional, Callable
 from langchain_oci import ChatOCIGenAI
-from langchain_core.callbacks import BaseCallbackHandler
-
-
-class TimingCallbackHandler(BaseCallbackHandler):
-    """Callback handler to track timing metrics"""
-
-    def __init__(self):
-        self.first_token_time: Optional[float] = None
-        self.start_time = time.time()
-        self.first_token_received = False
-
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
-        """Called when a new token is generated"""
-        if not self.first_token_received:
-            self.first_token_time = time.time() - self.start_time
-            self.first_token_received = True
 
 
 class LLMService:
@@ -80,8 +64,9 @@ class LLMService:
         if not model:
             raise ValueError(f"Model {model_name} is not available")
 
-        callback_handler = TimingCallbackHandler()
         start_time = time.time()
+        first_token_time = None
+        first_token_received = False
 
         try:
             # Convert prompt to messages format for ChatOCIGenAI
@@ -89,7 +74,12 @@ class LLMService:
 
             # Stream the response
             response_parts = []
-            for chunk in model.stream(messages, callbacks=[callback_handler]):
+            for chunk in model.stream(messages):
+                # Track time to first token
+                if not first_token_received:
+                    first_token_time = time.time() - start_time
+                    first_token_received = True
+
                 if hasattr(chunk, "content"):
                     token = chunk.content
                 else:
@@ -100,7 +90,7 @@ class LLMService:
                 # Call stream callback if provided
                 if stream_callback:
                     metrics = {
-                        "time_to_first_token": callback_handler.first_token_time,
+                        "time_to_first_token": first_token_time,
                         "elapsed_time": time.time() - start_time,
                     }
                     stream_callback(token, metrics)
@@ -110,12 +100,11 @@ class LLMService:
             total_time = end_time - start_time
 
             # Ensure we have time_to_first_token
-            time_to_first_token = callback_handler.first_token_time
-            if time_to_first_token is None:
+            if first_token_time is None:
                 # If no tokens were streamed, set to total_time
-                time_to_first_token = total_time
+                first_token_time = total_time
 
-            return response_text, time_to_first_token, total_time
+            return response_text, first_token_time, total_time
 
         except Exception as e:
             raise Exception(f"Error generating response from {model_name}: {str(e)}")
