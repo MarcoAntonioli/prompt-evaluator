@@ -184,10 +184,16 @@ function PromptForm() {
             };
           }
 
+          // Don't process updates if model is already complete (prevents duplicates)
+          if (newState[modelName].isComplete && !update.is_complete) {
+            return prev;
+          }
+
           if (update.error) {
             newState[modelName].error = update.error;
             newState[modelName].isComplete = true;
-          } else if (update.token) {
+          } else if (update.token && !update.is_complete && !newState[modelName].isComplete) {
+            // Only process tokens if not complete (check both update flag and current state)
             newState[modelName].response += update.token;
             if (update.time_to_first_token !== null && newState[modelName].timeToFirstToken === null) {
               newState[modelName].timeToFirstToken = update.time_to_first_token;
@@ -199,8 +205,12 @@ function PromptForm() {
 
           if (update.is_complete) {
             newState[modelName].isComplete = true;
-            newState[modelName].timeToFirstToken = update.time_to_first_token;
-            newState[modelName].totalTime = update.total_time;
+            if (update.time_to_first_token !== null) {
+              newState[modelName].timeToFirstToken = update.time_to_first_token;
+            }
+            if (update.total_time !== null) {
+              newState[modelName].totalTime = update.total_time;
+            }
           }
 
           // Check if all selected models are complete
