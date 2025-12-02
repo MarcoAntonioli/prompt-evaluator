@@ -51,6 +51,7 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
 }
 
 .statistics-table thead {
@@ -59,18 +60,20 @@
 }
 
 .statistics-table th {
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .statistics-table td {
-  padding: 1rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #f0f0f0;
   color: #333;
+  white-space: nowrap;
 }
 
 .statistics-table tbody tr:hover {
