@@ -104,7 +104,7 @@ class LLMService:
                         auth=OciUserPrincipalAuth(profile_name="DEFAULT"),
                         headers={"CompartmentId": self.compartment_id},
                     ),
-                    model_kwargs={"temperature": 0.7, "max_tokens": 200},
+                    model_kwargs={"temperature": 0.7},
                     streaming=True,
                 )
             else:
