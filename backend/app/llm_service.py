@@ -1,7 +1,7 @@
 import os
 import time
 from typing import Dict, Optional, Callable
-from langchain_oci import OCIGenAI
+from langchain_oci import ChatOCIGenAI
 from langchain_core.callbacks import BaseCallbackHandler
 
 
@@ -44,7 +44,7 @@ class LLMService:
 
     def _init_model(
         self, model_name: str, model_id: Optional[str]
-    ) -> Optional[OCIGenAI]:
+    ) -> Optional[ChatOCIGenAI]:
         """Initialize a single OCI model"""
         if not model_id:
             print(
@@ -53,7 +53,7 @@ class LLMService:
             return None
 
         try:
-            return OCIGenAI(
+            return ChatOCIGenAI(
                 model_id=model_id,
                 # service_endpoint=self.service_endpoint,
                 compartment_id=self.compartment_id,
@@ -84,9 +84,12 @@ class LLMService:
         start_time = time.time()
 
         try:
+            # Convert prompt to messages format for ChatOCIGenAI
+            messages = [{"role": "user", "content": prompt}]
+
             # Stream the response
             response_parts = []
-            for chunk in model.stream(prompt, callbacks=[callback_handler]):
+            for chunk in model.stream(messages, callbacks=[callback_handler]):
                 if hasattr(chunk, "content"):
                     token = chunk.content
                 else:

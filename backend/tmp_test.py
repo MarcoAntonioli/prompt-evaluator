@@ -6,7 +6,7 @@ Usage: uv run python tmp_test.py
 
 import os
 from dotenv import load_dotenv
-from langchain_oci import OCIGenAI
+from langchain_oci import ChatOCIGenAI
 
 # Load environment variables
 load_dotenv()
@@ -31,11 +31,11 @@ def test_model(model_name: str, model_id: str):
     try:
         # Initialize the model
         print(f"Initializing {model_name} model...")
-        llm = OCIGenAI(
+        llm = ChatOCIGenAI(
             model_id=model_id,
-            service_endpoint=service_endpoint,
+            # service_endpoint=service_endpoint,
             compartment_id=compartment_id,
-            model_kwargs={"temperature": 0.7, "max_tokens": 200},
+            # model_kwargs={"temperature": 0.7, "max_tokens": 200},
         )
         print(f"✓ Model initialized successfully\n")
 
@@ -48,8 +48,9 @@ def test_model(model_name: str, model_id: str):
         print(f"\nGenerating response...\n")
         print("-" * 60)
 
-        # Generate response
-        response = llm.invoke(prompt)
+        # Generate response using chat format
+        messages = [{"role": "user", "content": prompt}]
+        response = llm.invoke(messages)
 
         print(response)
         print("-" * 60)
