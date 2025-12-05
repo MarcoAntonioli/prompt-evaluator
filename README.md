@@ -71,6 +71,9 @@ touch .env
    - `OCI_COHERE_COMMAND_LATEST_MODEL_ID`
    - `OCI_COHERE_COMMAND_A_03_2025_MODEL_ID`
    - `OCI_COHERE_COMMAND_PLUS_LATEST_MODEL_ID`
+   - `OCI_GOOGLE_GEMINI_2_5_PRO_MODEL_ID`
+   - `OCI_GOOGLE_GEMINI_2_5_FLASH_MODEL_ID`
+   - `OCI_GOOGLE_GEMINI_2_5_FLASH_LITE_MODEL_ID`
 
    **Note**: You need at least one model configured. Comment out models you don't want to use by adding `#` at the start of the line.
 

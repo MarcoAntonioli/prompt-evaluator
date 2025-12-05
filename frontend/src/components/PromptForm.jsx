@@ -13,6 +13,8 @@ const formatModelName = (modelKey) => {
     return modelKey.replace('meta.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   } else if (modelKey.startsWith('cohere.')) {
     return modelKey.replace('cohere.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  } else if (modelKey.startsWith('google.')) {
+    return modelKey.replace('google.', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
   return modelKey;
 };
@@ -70,6 +72,11 @@ function PromptForm() {
             "cohere.command-latest",
             "cohere.command-a-03-2025",
             "cohere.command-plus-latest"
+          ],
+          "Google Gemini": [
+            "google.gemini-2.5-pro",
+            "google.gemini-2.5-flash",
+            "google.gemini-2.5-flash-lite"
           ]
         };
         setModelRegistry(fallbackRegistry);

@@ -68,6 +68,17 @@ class LLMService:
             "cohere.command-plus-latest", "OCI_COHERE_COMMAND_PLUS_LATEST_MODEL_ID"
         )
 
+        # Google Gemini Models
+        self._add_model_if_configured(
+            "google.gemini-2.5-pro", "OCI_GOOGLE_GEMINI_2_5_PRO_MODEL_ID"
+        )
+        self._add_model_if_configured(
+            "google.gemini-2.5-flash", "OCI_GOOGLE_GEMINI_2_5_FLASH_MODEL_ID"
+        )
+        self._add_model_if_configured(
+            "google.gemini-2.5-flash-lite", "OCI_GOOGLE_GEMINI_2_5_FLASH_LITE_MODEL_ID"
+        )
+
         # Initialize models lazily (on-demand)
         self.models: Dict[str, Optional[Union[ChatOCIGenAI, ChatOpenAI]]] = {}
 
@@ -101,7 +112,7 @@ class LLMService:
                         auth=OciUserPrincipalAuth(profile_name="DEFAULT"),
                         headers={"CompartmentId": self.compartment_id},
                     ),
-                    model_kwargs={"temperature": 0.7},
+                    temperature=0.7,
                     streaming=True,
                 )
             else:

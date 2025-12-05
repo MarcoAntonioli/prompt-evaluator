@@ -1,0 +1,14 @@
+{
+  "name": "prompt-evaluator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OCI LLM Comparison Demo - Unified development setup",
+  "scripts": {
+    "setup": "npm install && npx concurrently --names \"backend,frontend\" --prefix-colors \"blue,green\" \"cd backend && uv sync\" \"cd frontend && npm install\"",
+    "dev": "concurrently --names \"backend,frontend\" --prefix-colors \"blue,green\" \"cd backend && uv run uvicorn app.main:app --reload --port 8000\" \"cd frontend && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
