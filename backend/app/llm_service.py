@@ -1,142 +1,56 @@
 import os
 import time
-import httpx
-from typing import Dict, Optional, Callable, Union
-from langchain_oci import ChatOCIGenAI
-from langchain_openai import ChatOpenAI
-from oci_openai import OciUserPrincipalAuth
+from typing import Dict, Optional, Callable
+from openai import OpenAI
 
 
 class LLMService:
-    """Service for managing OCI LLM interactions"""
+    """Service for managing OCI LLM interactions via LiteLLM proxy"""
 
-    def __init__(self):
-        self.compartment_id = os.getenv("COMPARTMENT_OCID")
-        if not self.compartment_id:
-            raise ValueError("COMPARTMENT_OCID environment variable is required")
+    def __init__(self, proxy_base_url: str = None):
+        """
+        Initialize LLM service with LiteLLM proxy
 
-        # Service endpoint (adjust region as needed)
-        self.service_endpoint = os.getenv(
-            "OCI_SERVICE_ENDPOINT",
-            "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-        )
+        Args:
+            proxy_base_url: Base URL for LiteLLM proxy (default: http://localhost:4000/v1)
+        """
+        # Get proxy URL from environment or use default
+        proxy_port = os.getenv("LITELLM_PORT", "4000")
+        self.proxy_base_url = proxy_base_url or f"http://localhost:{proxy_port}/v1"
 
-        # Model registry - maps model key to model_id (without oci/ prefix)
-        # Only includes models that have environment variables set
-        self.model_registry = {}
-
-        # xAI Grok Models
-        self._add_model_if_configured("xai.grok-4", "OCI_XAI_GROK_4_MODEL_ID")
-        self._add_model_if_configured(
-            "xai.grok-4-fast-reasoning", "OCI_XAI_GROK_4_FAST_REASONING_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "xai.grok-4-fast-non-reasoning",
-            "OCI_XAI_GROK_4_FAST_NON_REASONING_MODEL_ID",
-        )
-        self._add_model_if_configured("xai.grok-3", "OCI_XAI_GROK_3_MODEL_ID")
-        self._add_model_if_configured("xai.grok-3-fast", "OCI_XAI_GROK_3_FAST_MODEL_ID")
-        self._add_model_if_configured("xai.grok-3-mini", "OCI_XAI_GROK_3_MINI_MODEL_ID")
-        self._add_model_if_configured(
-            "xai.grok-3-mini-fast", "OCI_XAI_GROK_3_MINI_FAST_MODEL_ID"
+        # Initialize OpenAI client pointing to LiteLLM proxy
+        self.client = OpenAI(
+            api_key="sk-any-string",  # Required by client but not validated by LiteLLM
+            base_url=self.proxy_base_url,
         )
 
-        # Meta Llama Models
-        self._add_model_if_configured(
-            "meta.llama-4-maverick-17b-128e-instruct-fp8",
-            "OCI_META_LLAMA_4_MAVERICK_17B_128E_INSTRUCT_FP8_MODEL_ID",
-        )
-        self._add_model_if_configured(
-            "meta.llama-4-scout-17b-16e-instruct",
-            "OCI_META_LLAMA_4_SCOUT_17B_16E_INSTRUCT_MODEL_ID",
-        )
-        self._add_model_if_configured(
-            "meta.llama-3.3-70b-instruct", "OCI_META_LLAMA_3_3_70B_INSTRUCT_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "meta.llama-3.1-405b-instruct", "OCI_META_LLAMA_3_1_405B_INSTRUCT_MODEL_ID"
-        )
-
-        # Cohere Models
-        self._add_model_if_configured(
-            "cohere.command-latest", "OCI_COHERE_COMMAND_LATEST_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "cohere.command-a-03-2025", "OCI_COHERE_COMMAND_A_03_2025_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "cohere.command-plus-latest", "OCI_COHERE_COMMAND_PLUS_LATEST_MODEL_ID"
-        )
-
-        # Google Gemini Models
-        self._add_model_if_configured(
-            "google.gemini-2.5-pro", "OCI_GOOGLE_GEMINI_2_5_PRO_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "google.gemini-2.5-flash", "OCI_GOOGLE_GEMINI_2_5_FLASH_MODEL_ID"
-        )
-        self._add_model_if_configured(
-            "google.gemini-2.5-flash-lite", "OCI_GOOGLE_GEMINI_2_5_FLASH_LITE_MODEL_ID"
-        )
-
-        # Initialize models lazily (on-demand)
-        self.models: Dict[str, Optional[Union[ChatOCIGenAI, ChatOpenAI]]] = {}
-
-    def _add_model_if_configured(self, model_key: str, env_var_name: str):
-        """Add model to registry if environment variable is set"""
-        model_id = os.getenv(env_var_name)
-        if model_id:
-            # Remove 'oci/' prefix if present
-            if model_id.startswith("oci/"):
-                model_id = model_id[4:]
-            self.model_registry[model_key] = model_id
-
-    def _init_model(
-        self, model_key: str, model_id: str
-    ) -> Optional[Union[ChatOCIGenAI, ChatOpenAI]]:
-        """Initialize a single OCI model"""
-        if not model_id:
-            print(
-                f"Warning: {model_key} model ID not provided, skipping initialization"
-            )
-            return None
-
-        try:
-            # Use ChatOpenAI with OciUserPrincipalAuth for xAI Grok models
-            if model_key.startswith("xai."):
-                return ChatOpenAI(
-                    model=model_id,  # Use model_id directly without oci/ prefix
-                    api_key="OCI",
-                    base_url="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1",
-                    http_client=httpx.Client(
-                        auth=OciUserPrincipalAuth(profile_name="DEFAULT"),
-                        headers={"CompartmentId": self.compartment_id},
-                    ),
-                    temperature=0.7,
-                    streaming=True,
-                )
-            else:
-                # Use ChatOCIGenAI for other models (Llama, Cohere)
-                return ChatOCIGenAI(
-                    model_id=model_id,  # Use model_id directly without oci/ prefix
-                    compartment_id=self.compartment_id,
-                    is_stream=True,
-                )
-        except Exception as e:
-            print(f"Error initializing {model_key} model: {e}")
-            return None
-
-    def _get_or_init_model(
-        self, model_key: str
-    ) -> Optional[Union[ChatOCIGenAI, ChatOpenAI]]:
-        """Get model instance, initializing if needed"""
-        if model_key not in self.models:
-            model_id = self.model_registry.get(model_key)
-            if model_id:
-                self.models[model_key] = self._init_model(model_key, model_id)
-            else:
-                self.models[model_key] = None
-        return self.models.get(model_key)
+        # Model registry - all available OCI models via LiteLLM
+        # Using LiteLLM naming format: oci/model-name
+        self.model_registry = {
+            # xAI Grok Models
+            "oci/xai.grok-4",
+            "oci/xai.grok-4-fast-reasoning",
+            "oci/xai.grok-4-fast-non-reasoning",
+            "oci/xai.grok-3",
+            "oci/xai.grok-3-fast",
+            "oci/xai.grok-3-mini",
+            "oci/xai.grok-3-mini-fast",
+            "oci/xai.grok-code-fast-1",
+            # Meta Llama Models
+            "oci/meta.llama-4-maverick-17b-128e-instruct-fp8",
+            "oci/meta.llama-4-scout-17b-16e-instruct",
+            "oci/meta.llama-3.3-70b-instruct",
+            "oci/meta.llama-3.2-90b-vision-instruct",
+            "oci/meta.llama-3.1-405b-instruct",
+            # Cohere Models
+            "oci/cohere.command-latest",
+            "oci/cohere.command-a-03-2025",
+            "oci/cohere.command-plus-latest",
+            # Google Gemini Models
+            "oci/google.gemini-2.5-pro",
+            "oci/google.gemini-2.5-flash",
+            "oci/google.gemini-2.5-flash-lite",
+        }
 
     def generate_with_metrics(
         self,
@@ -145,45 +59,56 @@ class LLMService:
         stream_callback: Optional[Callable[[str, Dict], None]] = None,
     ) -> tuple[str, float, float]:
         """
-        Generate response with timing metrics
+        Generate response with timing metrics using OpenAI-compatible API via LiteLLM
+
+        Args:
+            model_name: Model name in LiteLLM format (e.g., "oci/xai.grok-4")
+            prompt: Input prompt text
+            stream_callback: Optional callback function for streaming tokens
 
         Returns:
             tuple: (response_text, time_to_first_token, total_time)
         """
-        model = self._get_or_init_model(model_name)
-        if not model:
-            raise ValueError(f"Model {model_name} is not available")
+        if model_name not in self.model_registry:
+            raise ValueError(f"Model {model_name} is not available in registry")
 
         start_time = time.time()
         first_token_time = None
         first_token_received = False
 
         try:
-            # Convert prompt to messages format for ChatOCIGenAI
+            # Convert prompt to messages format
             messages = [{"role": "user", "content": prompt}]
 
-            # Stream the response
+            # Stream the response using OpenAI SDK
             response_parts = []
-            for chunk in model.stream(messages):
+            stream = self.client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                stream=True,
+                temperature=0.7,
+            )
+
+            for chunk in stream:
                 # Track time to first token
                 if not first_token_received:
                     first_token_time = time.time() - start_time
                     first_token_received = True
 
-                if hasattr(chunk, "content"):
-                    token = chunk.content
-                else:
-                    token = str(chunk)
+                # Extract content from chunk
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, "content") and delta.content:
+                        token = delta.content
+                        response_parts.append(token)
 
-                response_parts.append(token)
-
-                # Call stream callback if provided
-                if stream_callback:
-                    metrics = {
-                        "time_to_first_token": first_token_time,
-                        "elapsed_time": time.time() - start_time,
-                    }
-                    stream_callback(token, metrics)
+                        # Call stream callback if provided
+                        if stream_callback:
+                            metrics = {
+                                "time_to_first_token": first_token_time,
+                                "elapsed_time": time.time() - start_time,
+                            }
+                            stream_callback(token, metrics)
 
             response_text = "".join(response_parts)
             end_time = time.time()
@@ -200,9 +125,10 @@ class LLMService:
             raise Exception(f"Error generating response from {model_name}: {str(e)}")
 
     def get_available_models(self) -> list[str]:
-        """Get list of available model keys from registry"""
-        return list(self.model_registry.keys())
+        """Get list of available model names from registry"""
+        return sorted(list(self.model_registry))
 
     def get_model_registry(self) -> Dict[str, str]:
-        """Get the full model registry"""
-        return self.model_registry.copy()
+        """Get the full model registry (for compatibility)"""
+        # Return dict mapping model name to itself (no model IDs needed with LiteLLM)
+        return {model: model for model in self.model_registry}
