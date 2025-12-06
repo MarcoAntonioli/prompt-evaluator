@@ -22,25 +22,58 @@ async def lifespan(app: FastAPI):
     """Manage LiteLLM proxy lifecycle"""
     global litellm_process
 
-    # Start LiteLLM proxy
-    litellm_port = os.getenv("LITELLM_PORT", "4000")
-    config_path = Path(__file__).parent.parent / "config.yaml"
+    # Generate config.yaml from environment variables
+    backend_dir = Path(__file__).parent.parent
+    generate_script = backend_dir / "generate_config.py"
+    config_path = backend_dir / "config.yaml"
+
+    if generate_script.exists():
+        import subprocess as sp
+
+        print("Generating config.yaml from environment variables...")
+        try:
+            result = sp.run(
+                [sys.executable, str(generate_script)],
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            print(result.stdout)
+        except sp.CalledProcessError as e:
+            raise RuntimeError(
+                f"Failed to generate config.yaml:\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}"
+            )
 
     if not config_path.exists():
         raise FileNotFoundError(
             f"LiteLLM config file not found at {config_path}. "
-            "Please ensure config.yaml exists in the backend directory."
+            "Please ensure config.yaml exists or generate_config.py can create it."
         )
 
+    # Start LiteLLM proxy
+    litellm_port = os.getenv("LITELLM_PORT", "4000")
     print(f"Starting LiteLLM proxy on port {litellm_port}...")
 
     try:
+        # Find litellm executable in the virtual environment
+        import shutil
+
+        venv_bin = Path(__file__).parent.parent / ".venv" / "bin"
+        litellm_cmd = venv_bin / "litellm"
+
+        if not litellm_cmd.exists():
+            # Fallback: try to find litellm in PATH
+            litellm_cmd = shutil.which("litellm")
+            if not litellm_cmd:
+                raise FileNotFoundError(
+                    "litellm executable not found. Make sure litellm[proxy] is installed: uv sync"
+                )
+
         # Start LiteLLM proxy server
         litellm_process = subprocess.Popen(
             [
-                sys.executable,
-                "-m",
-                "litellm",
+                str(litellm_cmd),
                 "--config",
                 str(config_path),
                 "--port",

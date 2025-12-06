@@ -38,3 +38,7 @@ Thumbs.db
 
 # Test files
 tmp_test.py
+.env_old
+
+# Config files
+backend/config.yaml

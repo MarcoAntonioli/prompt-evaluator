@@ -2,6 +2,7 @@ import os
 import time
 from typing import Dict, Optional, Callable
 from openai import OpenAI
+import httpx
 
 
 class LLMService:
@@ -17,6 +18,7 @@ class LLMService:
         # Get proxy URL from environment or use default
         proxy_port = os.getenv("LITELLM_PORT", "4000")
         self.proxy_base_url = proxy_base_url or f"http://localhost:{proxy_port}/v1"
+        self.proxy_host = f"http://localhost:{proxy_port}"
 
         # Initialize OpenAI client pointing to LiteLLM proxy
         self.client = OpenAI(
@@ -126,6 +128,25 @@ class LLMService:
 
     def get_available_models(self) -> list[str]:
         """Get list of available model names from registry"""
+        # Try to fetch models from proxy first, fallback to registry
+        try:
+            with httpx.Client(timeout=2.0) as client:
+                response = client.get(
+                    f"{self.proxy_host}/v1/models",
+                    headers={"Authorization": "Bearer sk-any-string"},
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    # Extract model IDs from proxy response
+                    proxy_models = [model["id"] for model in data.get("data", [])]
+                    # Return intersection of proxy models and registry
+                    available = [m for m in self.model_registry if m in proxy_models]
+                    if available:
+                        return sorted(available)
+        except Exception:
+            # If proxy is not available or returns error, use registry
+            pass
+
         return sorted(list(self.model_registry))
 
     def get_model_registry(self) -> Dict[str, str]:
