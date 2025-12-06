@@ -15,14 +15,14 @@ A web application that compares multiple Large Language Models (LLMs) hosted on 
 - **Backend**: FastAPI (Python) with SQLAlchemy for database management
 - **Frontend**: React with Vite, React Router, and Recharts for visualizations
 - **Database**: SQLite for storing prompts and responses
-- **LLM Integration**: Uses `langchain_oci` for OCI model integration
+- **LLM Integration**: Uses LiteLLM proxy for OpenAI-compatible API access to OCI Generative AI models
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.9+
 - Node.js 16+
 - OCI account with access to Generative AI models
-- Compartment OCID and model IDs for the models you want to use
+- OCI API credentials (user OCID, fingerprint, tenancy OCID, private key file, compartment OCID)
 
 ## Setup
 
@@ -46,41 +46,34 @@ uv sync
 
 4. Create a `.env` file in the `backend` directory:
 ```bash
-cp .env.example .env  # if .env.example is present
-# or create it manually:
-touch .env
+cp .env.example .env
 ```
 
-5. Edit `.env` with your OCI credentials. The only required value is your compartment OCID; the others have safe defaults:
-   - `COMPARTMENT_OCID`: Your OCI compartment OCID (**required**)
+5. Edit `.env` with your OCI credentials:
+   - `OCI_USER_OCID`: Your OCI user OCID (**required**)
+   - `OCI_FINGERPRINT`: Your OCI API key fingerprint (**required**)
+   - `OCI_TENANCY_OCID`: Your OCI tenancy OCID (**required**)
+   - `OCI_REGION`: Your OCI region (default: `us-chicago-1`, **optional**)
+   - `OCI_KEY_FILE`: Absolute path to your OCI API private key file (**required**)
+     - Example: `/Users/yourname/.oci/oci_api_key.pem`
+     - **Note**: Use absolute paths (the `~` tilde is not expanded by LiteLLM)
+   - `OCI_COMPARTMENT_ID`: Your OCI compartment OCID (**required**)
    - `DATABASE_URL`: Database URL (**optional**, defaults to SQLite)
-   - `OCI_SERVICE_ENDPOINT`: OCI service endpoint (**optional**, uses the standard default)
+   - `LITELLM_PORT`: Port for LiteLLM proxy (**optional**, defaults to `4000`)
 
-   The model IDs are already included in the `.env.example` file. By default, all models are available—just leave the relevant lines uncommented in your `.env` to enable a model. If you don't want to use a specific model, comment out its line by adding `#` at the start.
-   - `OCI_XAI_GROK_4_MODEL_ID`
-   - `OCI_XAI_GROK_4_FAST_REASONING_MODEL_ID`
-   - `OCI_XAI_GROK_4_FAST_NON_REASONING_MODEL_ID`
-   - `OCI_XAI_GROK_3_MODEL_ID`
-   - `OCI_XAI_GROK_3_FAST_MODEL_ID`
-   - `OCI_XAI_GROK_3_MINI_MODEL_ID`
-   - `OCI_XAI_GROK_3_MINI_FAST_MODEL_ID`
-   - `OCI_META_LLAMA_4_MAVERICK_17B_128E_INSTRUCT_FP8_MODEL_ID`
-   - `OCI_META_LLAMA_4_SCOUT_17B_16E_INSTRUCT_MODEL_ID`
-   - `OCI_META_LLAMA_3_3_70B_INSTRUCT_MODEL_ID`
-   - `OCI_META_LLAMA_3_1_405B_INSTRUCT_MODEL_ID`
-   - `OCI_COHERE_COMMAND_LATEST_MODEL_ID`
-   - `OCI_COHERE_COMMAND_A_03_2025_MODEL_ID`
-   - `OCI_COHERE_COMMAND_PLUS_LATEST_MODEL_ID`
-   - `OCI_GOOGLE_GEMINI_2_5_PRO_MODEL_ID`
-   - `OCI_GOOGLE_GEMINI_2_5_FLASH_MODEL_ID`
-   - `OCI_GOOGLE_GEMINI_2_5_FLASH_LITE_MODEL_ID`
+   **Note**: All models are configured in `config.yaml` and available automatically. No need to configure individual model IDs.
 
-   **Note**: You need at least one model configured. Comment out models you don't want to use by adding `#` at the start of the line.
+6. Ensure your OCI API key file has appropriate permissions:
+```bash
+chmod 600 /path/to/your/oci_api_key.pem
+```
 
-6. Run the backend server using `uv`:
+7. Run the backend server using `uv`:
 ```bash
 uv run uvicorn app.main:app --reload --port 8000
 ```
+
+   The LiteLLM proxy will start automatically on port 4000 (or the port specified in `LITELLM_PORT`). The FastAPI server runs on port 8000.
 
 ### Frontend Setup
 
@@ -115,20 +108,73 @@ The application will be available at `http://localhost:5173`
 - `GET /api/prompts` - Get all prompts
 - `GET /api/prompts/{prompt_id}` - Get detailed results for a prompt
 - `GET /api/prompts/{prompt_id}/stream` - Stream real-time updates (SSE)
+- `GET /api/prompts/models/registry` - Get available models organized by provider
+
+## Available Models
+
+All models are configured via LiteLLM and use the `oci/` prefix:
+
+**xAI Grok Models:**
+- `oci/xai.grok-4`
+- `oci/xai.grok-4-fast-reasoning`
+- `oci/xai.grok-4-fast-non-reasoning`
+- `oci/xai.grok-3`
+- `oci/xai.grok-3-fast`
+- `oci/xai.grok-3-mini`
+- `oci/xai.grok-3-mini-fast`
+- `oci/xai.grok-code-fast-1`
+
+**Meta Llama Models:**
+- `oci/meta.llama-4-maverick-17b-128e-instruct-fp8`
+- `oci/meta.llama-4-scout-17b-16e-instruct`
+- `oci/meta.llama-3.3-70b-instruct`
+- `oci/meta.llama-3.2-90b-vision-instruct`
+- `oci/meta.llama-3.1-405b-instruct`
+
+**Cohere Models:**
+- `oci/cohere.command-latest`
+- `oci/cohere.command-a-03-2025`
+- `oci/cohere.command-plus-latest`
+
+**Google Gemini Models:**
+- `oci/google.gemini-2.5-pro`
+- `oci/google.gemini-2.5-flash`
+- `oci/google.gemini-2.5-flash-lite`
 
 ## Environment Variables
 
-- `COMPARTMENT_OCID`: Your OCI compartment OCID (required)
-- `OCI_COHERE_MODEL_ID`: Cohere model ID
-- `OCI_GEMINI_MODEL_ID`: Gemini model ID
-- `OCI_GROK_MODEL_ID`: Grok model ID
-- `OCI_LLAMA_MODEL_ID`: Llama model ID
-- `OCI_SERVICE_ENDPOINT`: OCI service endpoint (optional, has default)
+- `OCI_USER_OCID`: Your OCI user OCID (required)
+- `OCI_FINGERPRINT`: Your OCI API key fingerprint (required)
+- `OCI_TENANCY_OCID`: Your OCI tenancy OCID (required)
+- `OCI_REGION`: OCI region (optional, defaults to `us-chicago-1`)
+- `OCI_KEY_FILE`: Absolute path to OCI API private key file (required)
+- `OCI_COMPARTMENT_ID`: Your OCI compartment OCID (required)
 - `DATABASE_URL`: Database connection URL (optional, defaults to SQLite)
+- `LITELLM_PORT`: Port for LiteLLM proxy (optional, defaults to `4000`)
+
+## How It Works
+
+The application uses **LiteLLM** as a proxy server that provides OpenAI API compatibility for all OCI Generative AI models. This approach:
+
+1. **Simplifies Authentication**: OCI credentials are configured once in `config.yaml` and environment variables
+2. **Unified API**: All models are accessed through the standard OpenAI SDK format
+3. **Automatic Proxy**: LiteLLM proxy starts automatically when the FastAPI app starts
+4. **Streaming Support**: Full support for streaming responses with metrics tracking
+
+The LiteLLM proxy runs embedded within the FastAPI application and handles all OCI authentication and model routing automatically.
 
 ## Notes
 
-- Make sure your OCI credentials are properly configured (via OCI config file or environment variables)
-- The application requires at least one model to be configured
-- Model IDs may vary depending on your OCI region and available models
+- Make sure your OCI credentials are properly configured in the `.env` file
+- The OCI API private key file must exist at the path specified in `OCI_KEY_FILE`
+- Use absolute paths for `OCI_KEY_FILE` (the `~` tilde is not expanded)
+- The LiteLLM proxy starts automatically on app startup
+- Model IDs are configured in `config.yaml` - no need to set individual model environment variables
 
+## Troubleshooting
+
+If the LiteLLM proxy fails to start:
+- Check that `config.yaml` exists in the `backend` directory
+- Verify all required environment variables are set in `.env`
+- Ensure the OCI API key file path is correct and accessible
+- Check that the proxy port (default 4000) is not already in use
