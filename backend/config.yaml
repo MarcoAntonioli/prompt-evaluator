@@ -1,0 +1,103 @@
+# LiteLLM Configuration for OCI Generative AI Models
+# OCI credentials are loaded from environment variables
+
+# Shared OCI credentials (using YAML anchors)
+# LiteLLM uses os.environ/VARIABLE_NAME syntax for environment variable substitution
+oci_credentials: &oci_credentials
+  oci_user: os.environ/OCI_USER_OCID
+  oci_fingerprint: os.environ/OCI_FINGERPRINT
+  oci_tenancy: os.environ/OCI_TENANCY_OCID
+  oci_region: os.environ/OCI_REGION
+  oci_key_file: os.environ/OCI_KEY_FILE
+  oci_compartment_id: os.environ/OCI_COMPARTMENT_ID
+  serving_mode: ON_DEMAND
+  drop_params: true
+
+# Model configurations
+model_list:
+  # xAI Grok Models
+  - model_name: oci/xai.grok-4
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-4-fast-reasoning
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-4-fast-non-reasoning
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-3
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-3-fast
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-3-mini
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-3-mini-fast
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/xai.grok-code-fast-1
+    litellm_params:
+      <<: *oci_credentials
+
+  # Meta Llama Models
+  - model_name: oci/meta.llama-4-maverick-17b-128e-instruct-fp8
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/meta.llama-4-scout-17b-16e-instruct
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/meta.llama-3.3-70b-instruct
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/meta.llama-3.2-90b-vision-instruct
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/meta.llama-3.1-405b-instruct
+    litellm_params:
+      <<: *oci_credentials
+
+  # Cohere Models
+  - model_name: oci/cohere.command-latest
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/cohere.command-a-03-2025
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/cohere.command-plus-latest
+    litellm_params:
+      <<: *oci_credentials
+
+  # Google Gemini Models
+  - model_name: oci/google.gemini-2.5-pro
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/google.gemini-2.5-flash
+    litellm_params:
+      <<: *oci_credentials
+  
+  - model_name: oci/google.gemini-2.5-flash-lite
+    litellm_params:
+      <<: *oci_credentials
+
+# LiteLLM server settings
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+
+
